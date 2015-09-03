@@ -3,42 +3,47 @@
  *
  * Copyright (c) 2015 NAN contributors
  *
- * MIT License <https://github.com/rvagg/nan/blob/master/LICENSE.md>
+ * MIT License <https://github.com/nodejs/nan/blob/master/LICENSE.md>
  ********************************************************************/
 
 #include <nan.h>
 
-NAN_METHOD(ReturnValue) {
-  NanScope();
-  if (args.Length() == 1) {
-    NanReturnValue(args[0]);
+using namespace Nan;  // NOLINT(build/namespaces)
+
+static Global<v8::Boolean> global;
+
+NAN_METHOD(ReturnAValue) {
+  const FunctionCallbackInfo<v8::Value> &cbinfo = info;
+  ReturnValue<v8::Value> ret = cbinfo.GetReturnValue();
+  if (cbinfo.Length() == 1) {
+    ret.Set(info[0].As<v8::String>());
   } else {
-    NanReturnValue(NanNew<v8::String>("default"));
+    ret.Set(New("default").ToLocalChecked());
   }
 }
 
 NAN_METHOD(ReturnPrimitive) {
-  NanScope();
-  NanReturnValue(true);
+  info.GetReturnValue().Set(true);
 }
 
-NAN_METHOD(ReturnString) {
-  NanScope();
-  NanReturnValue("yes, it works");
+NAN_METHOD(ReturnGlobal) {
+  info.GetReturnValue().Set(global);
 }
 
-void Init (v8::Handle<v8::Object> target) {
-  target->Set(
-      NanNew<v8::String>("r")
-    , NanNew<v8::FunctionTemplate>(ReturnValue)->GetFunction()
+NAN_MODULE_INIT(Init) {
+  global.Reset(New(true));
+
+  Set(target
+    , New<v8::String>("r").ToLocalChecked()
+    , New<v8::FunctionTemplate>(ReturnAValue)->GetFunction()
   );
-  target->Set(
-      NanNew<v8::String>("p")
-    , NanNew<v8::FunctionTemplate>(ReturnPrimitive)->GetFunction()
+  Set(target
+    , New<v8::String>("p").ToLocalChecked()
+    , New<v8::FunctionTemplate>(ReturnPrimitive)->GetFunction()
   );
-  target->Set(
-      NanNew<v8::String>("s")
-    , NanNew<v8::FunctionTemplate>(ReturnString)->GetFunction()
+  Set(target
+    , New<v8::String>("q").ToLocalChecked()
+    , New<v8::FunctionTemplate>(ReturnGlobal)->GetFunction()
   );
 }
 

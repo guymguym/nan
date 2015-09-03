@@ -3,35 +3,44 @@
  *
  * Copyright (c) 2015 NAN contributors
  *
- * MIT License <https://github.com/rvagg/nan/blob/master/LICENSE.md>
+ * MIT License <https://github.com/nodejs/nan/blob/master/LICENSE.md>
  ********************************************************************/
 
 #include <nan.h>
 
-static v8::Persistent<v8::Function> callback;
+using namespace Nan;  // NOLINT(build/namespaces)
+
+static bool prologue_called = false;
+static bool epilogue_called = false;
 
 NAN_GC_CALLBACK(gcPrologueCallback) {
-  v8::Local<v8::Value> argv[] = {NanNew<v8::String>("prologue")};
-  NanMakeCallback(NanGetCurrentContext()->Global(), NanNew(callback), 1, argv);
+  prologue_called = true;
 }
 
 NAN_GC_CALLBACK(gcEpilogueCallback) {
-  v8::Local<v8::Value> argv[] = {NanNew<v8::String>("epilogue")};
-  NanMakeCallback(NanGetCurrentContext()->Global(), NanNew(callback), 1, argv);
+  epilogue_called = true;
 }
 
 NAN_METHOD(Hook) {
-  NanScope();
-  NanAssignPersistent(callback, args[0].As<v8::Function>());
-  NanAddGCPrologueCallback(gcPrologueCallback);
-  NanAddGCEpilogueCallback(gcEpilogueCallback);
-  NanReturnValue(args.Holder());
+  AddGCPrologueCallback(gcPrologueCallback);
+  AddGCEpilogueCallback(gcEpilogueCallback);
+  info.GetReturnValue().SetUndefined();
 }
 
-void Init (v8::Handle<v8::Object> target) {
-  target->Set(
-      NanNew<v8::String>("hook")
-    , NanNew<v8::FunctionTemplate>(Hook)->GetFunction()
+NAN_METHOD(Check) {
+  HandleScope scope;
+  info.GetReturnValue().Set(
+      New(prologue_called && epilogue_called));
+}
+
+NAN_MODULE_INIT(Init) {
+  Set(target
+    , New<v8::String>("hook").ToLocalChecked()
+    , New<v8::FunctionTemplate>(Hook)->GetFunction()
+  );
+  Set(target
+    , New<v8::String>("check").ToLocalChecked()
+    , New<v8::FunctionTemplate>(Check)->GetFunction()
   );
 }
 

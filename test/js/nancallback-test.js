@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2015 NAN contributors
  *
- * MIT License <https://github.com/rvagg/nan/blob/master/LICENSE.md>
+ * MIT License <https://github.com/nodejs/nan/blob/master/LICENSE.md>
  ********************************************************************/
 
 const test     = require('tap').test
@@ -12,14 +12,20 @@ const test     = require('tap').test
     , round = Math.round;
 
 test('nancallback', function (t) {
-  t.plan(7)
+  t.plan(13)
 
   var persistent = bindings;
   t.type(persistent.globalContext, 'function');
   t.type(persistent.specificContext, 'function');
+  t.type(persistent.customReceiver, 'function');
   t.type(persistent.compareCallbacks, 'function');
+  t.type(persistent.callDirect, 'function');
+  t.type(persistent.callAsFunction, 'function');
   persistent.globalContext(function () { t.ok(true); });
   persistent.specificContext(function () { t.ok(true); });
+  persistent.customReceiver(function () { t.equal(this, process); }, process);
+  persistent.callDirect(function () { t.ok(true); });
+  persistent.callAsFunction(function () { t.ok(true); });
 
   var round2 = Math.round
     , x = function(param) { return param + 1; }
